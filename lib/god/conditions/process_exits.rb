@@ -1,3 +1,6 @@
+
+require "monitor"
+
 module God
   module Conditions
     # Trigger when a process exits.
@@ -20,6 +23,8 @@ module God
       attr_accessor :pid_file
 
       def initialize
+        @pids = []
+        @mon = Monitor.new
         self.info = "process exited"
       end
 
@@ -32,32 +37,39 @@ module God
       end
 
       def register
-        pid = self.pid
+        @mon.synchronize do
+          current_pid = self.pid
+          @pids << current_pid
 
-        begin
-          EventHandler.register(pid, :proc_exit) do |extra|
-            formatted_extra = extra.size > 0 ? " #{extra.inspect}" : ""
-            self.info = "process #{pid} exited#{formatted_extra}"
-            self.watch.trigger(self)
+          begin
+            EventHandler.register(current_pid, :proc_exit) do |extra|
+              formatted_extra = extra.size > 0 ? " #{extra.inspect}" : ""
+              self.info = "process #{current_pid} exited#{formatted_extra}"
+              self.watch.trigger(self)
+            end
+
+            msg = "#{self.watch.name} registered 'proc_exit' event for pid #{current_pid}"
+            applog(self.watch, :info, msg)
+          rescue StandardError
+            raise EventRegistrationFailedError.new
           end
-
-          msg = "#{self.watch.name} registered 'proc_exit' event for pid #{pid}"
-          applog(self.watch, :info, msg)
-        rescue StandardError
-          raise EventRegistrationFailedError.new
         end
       end
 
       def deregister
-        pid = self.pid
-        if pid
-          EventHandler.deregister(pid, :proc_exit)
+        @mon.synchronize do
+          current_pid = self.pid
+          if !current_pid && @pids.empty? then
+            pid_file_location = self.pid_file || self.watch.pid_file
+            applog(self.watch, :error, "#{self.watch.name} could not deregister: no cached PIDs or PID file #{pid_file_location} (#{self.base_name})")
+            return
+          end
 
-          msg = "#{self.watch.name} deregistered 'proc_exit' event for pid #{pid}"
-          applog(self.watch, :info, msg)
-        else
-          pid_file_location = self.pid_file || self.watch.pid_file
-          applog(self.watch, :error, "#{self.watch.name} could not deregister: no cached PID or PID file #{pid_file_location} (#{self.base_name})")
+          [current_pid, @pids].flatten.sort.uniq.each do |pid|
+            EventHandler.deregister(pid, :proc_exit)
+            msg = "#{self.watch.name} deregistered 'proc_exit' event for pid #{pid}"
+            applog(self.watch, :info, msg)
+          end
         end
       end
     end
