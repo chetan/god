@@ -40,6 +40,7 @@ module God
         @mon.synchronize do
           current_pid = self.pid
           @pids << current_pid
+          #applog(self.watch, :info, "added current_pid #{current_pid} to @pids -> #{@pids.inspect}")
 
           begin
             EventHandler.register(current_pid, :proc_exit) do |extra|
@@ -65,11 +66,14 @@ module God
             return
           end
 
-          [current_pid, @pids].flatten.sort.uniq.each do |pid|
+          all_pids = [current_pid, @pids].flatten.sort.uniq
+          #applog(self.watch, :info, "removing all pids #{all_pids.inspect}")
+          all_pids.each do |pid|
             EventHandler.deregister(pid, :proc_exit)
             msg = "#{self.watch.name} deregistered 'proc_exit' event for pid #{pid}"
             applog(self.watch, :info, msg)
           end
+          @pids.clear
         end
       end
     end
