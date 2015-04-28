@@ -3,8 +3,8 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
 
   s.name = 'god'
-  s.version = '0.13.5'
-  s.date = '2015-01-09'
+  s.version = '0.13.6'
+  s.date = '2015-03-21'
 
   s.summary = "Process monitoring framework."
   s.description = "An easy to configure, easy to extend monitoring framework written in Ruby."
@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency('rake')
   s.add_development_dependency('minitest')
   s.add_development_dependency('rdoc', '~> 3.10')
-  s.add_development_dependency('twitter', '~> 4.0')
+  s.add_development_dependency('twitter', '~> 5.0')
   s.add_development_dependency('prowly', '~> 0.3')
   s.add_development_dependency('xmpp4r', '~> 0.5')
   s.add_development_dependency('dike', '~> 0.0.3')
@@ -92,6 +92,7 @@ Gem::Specification.new do |s|
     lib/god/contacts/jabber.rb
     lib/god/contacts/prowl.rb
     lib/god/contacts/scout.rb
+    lib/god/contacts/sensu.rb
     lib/god/contacts/slack.rb
     lib/god/contacts/statsd.rb
     lib/god/contacts/twitter.rb
@@ -169,6 +170,7 @@ Gem::Specification.new do |s|
     test/test_process.rb
     test/test_prowl.rb
     test/test_registry.rb
+    test/test_sensu.rb
     test/test_slack.rb
     test/test_socket.rb
     test/test_statsd.rb
